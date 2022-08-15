@@ -8,7 +8,7 @@ _Concepts which need visual aid_
 
   
 ## Playgrounds
-Concepts which do not need visual aid
+_Concepts which do not need visual aid_
 
 ### Minor functionalities
 **Sort Descriptors**: Better understanding of sort descriptors with a custom implementation from Advanced Swift.
