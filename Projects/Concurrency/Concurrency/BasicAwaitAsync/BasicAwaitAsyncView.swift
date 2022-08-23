@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct BasicAwaitAsyncView: View {
+struct ProductContentVideoView: View {
     @ObservedObject var viewModel: BasicAwaitAsyncViewModel
     @State var text: String
 
