@@ -85,3 +85,4 @@ Decathlon/Decathlon.xcworkspace/xcshareddata
 Decathlon/fastlane/report.xml
 Decathlon/fastlane/test_output/report.html
 Decathlon/fastlane/test_output/report.junit
+*.xcuserstate
