@@ -3,6 +3,13 @@
    version = "1.0">
    <Group
       location = "container:"
+      name = "AdvancedSwift">
+      <FileRef
+         location = "group:Built-in Collections.playground">
+      </FileRef>
+   </Group>
+   <Group
+      location = "container:"
       name = "Functions">
       <FileRef
          location = "group:SortDescriptors.playground">
