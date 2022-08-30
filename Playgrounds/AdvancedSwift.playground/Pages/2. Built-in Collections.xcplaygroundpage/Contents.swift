@@ -1,7 +1,7 @@
 import UIKit
 
 /*:
-# Built-in Collections
+# 2. Built-in Collections
 ## Arrays
 ### Arrays & Mutability
 
@@ -152,10 +152,7 @@ let arrayF = Array(sliceOfE)
 * Retrieving values from dictionaries take a constant time while retrieving a value from an array grows linearly with the size of the array
 * Dictionaries have no order
 * The return of a dictionary lookup is always optional
-
 */
-
-
 
 /*:
 ### Mutating Dictionaries
@@ -205,10 +202,149 @@ let settingsAsStrings = settings.mapValues { setting -> String in
 }
 
 /*:
+### Hashable Requirement
+ - Dictionaries are hash tables
+ - Reason to why dictionaries keys must be conformed to the hashable protocol
+ - Most default properties are already hashable
+ - Structures can become already hashable if all properties are hashable
+ - If not able to use the automatic hashble
+ */
+
+/*:
 ## Sets
-*  
+ - Unordered collection of elements, with each element, appearing only once
+ - Basically a dictionary that stores keys and no value
+ - The implementation of a set is with a hash table and has the same performance characteristics and requirements
+ - A set can be initialized by an array
+ - Set can use common operations like arrays: map, filter,...
 */
+
+let naturals: Set = [1, 2, 3, 2]
+naturals
+naturals.contains(3) // true
+naturals.contains(0) // false
+
+/*:
+### Set & Algebra
+ - Supports all mathematical sets operations
+ */
+
+// Subtratacting
+let iPods: Set = ["iPod Touch", "iPod Nano", "iPod Mini", "iPod Shuffle", "iPod Classic"]
+let discountinuedIpods: Set = ["iPod Mini", "iPod Clasic", "iPod Nano", "iPod Shuffle"]
+let currentIpods = iPods.subtracting(discountinuedIpods) // Only Touch
+
+// It is also possible to intersect
+let touchscreen: Set = ["iPhone", "iPad", "iPod Nano"]
+let iPodsWithTouch = iPods.intersection(touchscreen) // Nano / Touch
+
+// It is also to creaate a union of two sets and combine them. Without duplicates
+var discontinued: Set = ["iBook", "PowerBook", "Power Mac"]
+discontinued.formUnion(discountinuedIpods)
+discontinued
+
+/*:
+### Index Sets & Character Sets
+ - Set and OptionSet are the only types that conform to SetAlgebra
+ - But there are other types in Foundation: IndexSet & CharacterSet. Both dated before swift was a thing. They are bridged from Objective-C
+ - IndexSet represents a set of positive interger values
+   - More efficient than a normal set due to the usage of ranges to store.
+   - Say we have a list of 1000 rows in a tableview, we can easily store them in an IndexSet with the lower and top bound
+   - Stores a set of ranges
+ - CharacterSet is also an efficient way to store a set of Unicode code points
+   - Normally used to verify if a string contains characters from a specific character subset
+ */
+
+var indices = IndexSet()
+indices.insert(integersIn: 1..<5)
+indices.insert(integersIn: 0..<7)
+indices.insert(integersIn: 11..<15)
+let evenIndices = indices.filter { $0 % 2 == 0 }
+evenIndices
+
+/*:
+### Using Sets inside closures
+ - Both dictionaries & sets can be very useful data strctures to be used inside our functions
+ */
+
+extension Sequence where Element: Hashable {
+    func unique() -> [Element] {
+        var seen: Set<Element> = []
+
+        return filter { element in
+            if seen.contains(element) {
+                return false
+            } else {
+                seen.insert(element)
+                return true
+            }
+        }
+    }
+}
+
+// Order in the array is preserved
+[1, 2, 3, 12, 1, 3, 4, 5, 6, 4, 6].unique()
 
 /*:
 ## Ranges
+ - Interval of values with defined lower and upper bounds
 */
+
+let singleDigitNumbers = 0..<10
+Array(singleDigitNumbers)
+
+let lowercaseLetters = Character("a")...Character("z")
+
+/*:
+### Countable Ranges
+ - Range that seems like a natural fit for sequences and collections
+ - But there are other ranges that are not countable, such as our example of the lowercaseLetters above, the compiler wil not let us iterate over a range of Characters
+   - This happens because its elements do not conform to the protocol Stridable, go from element to another by adding an offsert
+ */
+
+/*:
+### Partial Ranges
+ - Initialized by using ... or ..< as prefix or postfix operator
+ - In the same way CountableRange is a typealias for range with strideable element types. CountablePartialRangeFrom is a type alias for PartialRangeFrom bu with tighter constraints
+ - When iterating with PartialRangeFrom it needs to have a break, otherwise the code will run forever
+   - This happens due to the fact that the iteration starts with a lower bound and increments itself using advanced(by: 1) with no upper limit
+ */
+
+let fromA: PartialRangeFrom<Character> = Character("a")...
+let throughZ: PartialRangeThrough<Character> = ...Character("z")
+let upto10: PartialRangeUpTo<Int> = ..<10
+
+let partialCountableRange: PartialRangeFrom<Int> = 15...
+var arrayH = [Int]()
+
+for i in partialCountableRange {
+    guard i < 20 else {
+        break
+    }
+
+    arrayH.append(i)
+}
+
+arrayH
+
+/*:
+### Range Expressions
+ - All five rage types confiorm to the RangeExpression protocol
+ - The purpose of the protocol is to allow a verification if an element is inside a range
+ */
+
+let arrayI = [1, 2, 3, 4]
+arrayI[2...]
+arrayI[..<1]
+arrayI[1...2]
+
+/*
+# Important notes to take
+ - Parameterizing Behavior with functions to reduce boilerplate in code and extract it into simpler functions and extensions
+   - Be careful to not over engineer
+ - Using ArraySlices are an optimal form of working with array due to it being a view through the array
+ - Retrieving values from a dictionaries require a constant time while arrays will increase depending on the size of the array
+ - Dictionaries, Sets and Arrays are value types
+ - Dictionaries and Sets are optimized due to the fact of them being hash tables
+ - Dictionaries and Sets are good intermediate structures on functions inside closures
+ */

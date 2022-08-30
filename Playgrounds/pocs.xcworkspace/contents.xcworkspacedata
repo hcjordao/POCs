@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
-   <Group
-      location = "container:"
-      name = "AdvancedSwift">
-      <FileRef
-         location = "group:Built-in Collections.playground">
-      </FileRef>
-   </Group>
+   <FileRef
+      location = "group:/Users/hcjordao/Documents/iOS/POCs/Playgrounds/AdvancedSwift.playground">
+   </FileRef>
    <Group
       location = "container:"
       name = "Functions">
