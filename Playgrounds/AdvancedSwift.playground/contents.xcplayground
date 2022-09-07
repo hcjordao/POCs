@@ -3,5 +3,6 @@
     <pages>
         <page name='2. Built-in Collections'/>
         <page name='3. Optionals'/>
+        <page name='4. Functions'/>
     </pages>
 </playground>
