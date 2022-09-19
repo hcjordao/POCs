@@ -49,7 +49,7 @@ myFunc(3)
 /*:
  - Functions can *capture* variables that exist outside of their local scope
    - We can think of these functions below with their variables as similar to instances of classes with a single method (the function) and some member variables (the captured variables)
-   - In programming terminology, a combination of a function and an environment of captured variables is called a closure. So in the example below f and g are examples of closures, because they captyre and use a non-local variable (counter) which was declared outside of them
+   - In programming terminology, a combination of a function and an environment of captured variables is called a closure. So in the example below f and g are examples of closures, because they capture and use a non-local variable (counter) which was declared outside of them
  */
 
 func counterFunc() -> (Int) -> String {
@@ -76,7 +76,7 @@ f(2) // Running total 9
 
 /*:
 - There are two ways of creating functions, with the func keyword or enclosing code with { *code* }, the latter is called closure expressions.
-   - Functions decalred as closure expressions can be thought as function literals, the same way as 1 and "hello" are integer and string literals.
+   - Functions declared as closure expressions can be thought as function literals, the same way as 1 and "hello" are integer and string literals.
    - The closures also are not named as is a function keyed by func. The only way they can be used is by assigning them to a variable or pass them to another function
    - Both notations are below are equivalent, apart from differences using labels.
    - Why is the { } syntax useful? Why not use func everytime?
@@ -211,6 +211,7 @@ func sortDescriptor<Root, Value>(
 > How does it work to use SortDescriptors on new Swift Versions.
 > - Easier than what is presented before on the book, no need to create a custom function
 > - sorted(using:) already accepts an array of descriptors, no need of creating a custom function
+> - However SortDescriptor only works with NSObjects, which does not make sense.
  */
 
 let typeDescriptorSwift = SortDescriptor(\Pokemon.type, order: .forward)
@@ -348,5 +349,214 @@ dictionary["one"] // Optional(2)
 
 /*:
 ### Nested Functions and inout
- - 
+ - Using inout parameter inside nested function is allowed, but Swift will make sure if it is safe (1)
+ - The inout value is not allowed to escape (2)
+   - This makes sense because the value for the inout is copied back, what would happen if it it no longer exists
+ */
+
+// Example (1)
+func incrementTenTimes(value: inout Int) {
+    func inc() {
+        value += 1
+    }
+
+    for _ in 0..<10 {
+        inc()
+    }
+}
+
+var x = 0
+incrementTenTimes(value: &x)
+x // 10
+
+// Example (2) - Error thrown
+//    func escapeIncrement(value: inout Int) -> () -> () {
+//        func inc() {
+//            value += 1
+//        }
+//
+//        return inc
+//    }
+
+/*:
+### When & Doesn't Mean Inout
+ - There are some types which really are being passed as reference with the & indicator
+   - An example would be UnsafeMutablePointer as a parameter (1)
+ - Be careful when invoking an & parameter
+ */
+
+// Example (1)
+func incref(pointer: UnsafeMutablePointer<Int>) -> () -> Int {
+    return {
+        pointer.pointee += 1
+        return pointer.pointee
+    }
+}
+
+let fun: () -> Int
+do {
+    var array = [0]
+    fun = incref(pointer: &array)
+}
+fun()
+
+/*:
+## Properties
+ - Two types of special methods: Computed Properties & Subscripts
+   - Computed Property: Looks like a property, but it does not use any memory to store its value, the value is computed everytime the variable is called
+ */
+
+extension Point {
+    var absoluteValue: Int {
+        x + y
+    }
+}
+
+var pointC = Point(x: 1, y: 1)
+pointC.absoluteValue // 2
+pointC.x += 1
+
+pointC.absoluteValue // 3
+
+/*:
+### Change Observers
+ - It is also possible to implement willSet and didSet handlers on properties, which get called everytime (even if the value is not mutated)
+   - didSet can be useful when working with Interface Builder
+   - They can only be set on the declaration site of the property
+ - This works through KVO to dynamicly add observer to a class setter
+ */
+
+class Robot {
+    enum State {
+        case stopped, forward, right, left
+    }
+
+    var state: State = .stopped
+}
+
+class ObservableObject: Robot {
+    override var state: State {
+        willSet {
+            print("Transitioning from \(state) to \(newValue)")
+        }
+    }
+}
+
+var robot = ObservableObject()
+robot.state = .forward
+
+/*:
+### Lazy Stored Properties
+ - Lazy properties must always be declared with var because its initial value might not be set until after initialization completes.
+ - The lazy modifier a very specific type of memoization
+   - Memoization: Optimization technique used primarily to speed up computer programs by storing the results of expensive function scalls and returning the cached result when the same inputs occur again
+ - Accessing lazy is a mutating operation because we are mutating the structure after its first initialization (1)
+   - Making all users of the Point structure var becausre of the lazy property kinda sucks :(, that is why lazy properties is a bad fit for structures
+ - Lazy properties does not perform thread synchronization, which means if multiple threads access the lazy property it can lead to the computation to be performed more than once along with its side effects
+ */
+
+var pointD = Point(x: 3, y: 4)
+pointD.distanceFromOrigin
+pointD.x += 10
+pointD.distanceFromOrigin // Did not change due to lazy
+
+// Example of error due to mutable (1)
+let immutablePoint = Point(x: 3, y: 4)
+// immutablePoint.distanceFromOrigin // Error
+
+/*:
+## Subscripts
+ - Subscripts are pretty much a hybrid of functions and computed properties
+ - Like functions they take arguments
+ - Like computed properties they can be either read-only (get) or read-write (using get/set)
+ - It is possible to overload them, different of properties (1)
+ */
+
+// Overload example (1)
+let fibs = [0, 1, 1, 2, 3, 5]
+let first = fibs[0] // 0
+fibs[1..<3] // [1, 1]
+
+/*:
+### Custom subscripts
+ - It is possible to create subscripts for our own types
+ - It is possible to extend existing subscripts with overloads (1)
+ */
+
+// Example of overload of Collection subscript (1)
+extension Collection {
+    subscript(indices indexList: Index...) -> [Element] {
+        var result = [Element]()
+        for index in indexList {
+            result.append(self[index])
+        }
+
+        return result
+    }
+}
+
+/*:
+### Advanced Swift
+ - Subcscripts are not limited single parameter
+ - Example: A dictionary subscript take a key and a default value (1)
+ - Subscripts can also be generic in their parameters or their return type
+ */
+
+// Example (1)
+var test: [String: Int?] = ["One": 1, "Two": nil]
+test["One", default: 10]
+test["Two", default: 11]
+test["Three", default: 12]
+
+// End of example (1)
+
+// Example (2)
+var japan: [String: Any] = [
+    "name": "Japan",
+    "capital": "Tokyo",
+    "population": 126_440_000,
+    "coordinates": [
+        "latitude": 35.0,
+        "longitude": 139.0
+    ]
+]
+
+// japan["coordinates"]?["latitude"] = 36.0 -> Throws error due to the Any? type
+
+// Error Cannot assing to immutable
+// (japan["coordinates"] as? [String: Double])?["latitude"] = 36.0
+// It is not possible to mutate after a type cast
+
+// We can create a subscript that solves this problem
+extension Dictionary {
+    subscript<Result>(key: Key, as type: Result.Type) -> Result? {
+        get {
+            return self[key] as? Result
+        }
+        set {
+            // Delete existing value if caller passed nil
+            guard let value = newValue else {
+                self[key] = nil
+                return
+            }
+
+            // Ignore if types mismatch
+            guard let value2 = value as? Value else {
+                return
+            }
+
+            self[key] = value2
+        }
+    }
+}
+
+japan["coordinates", as: [String: Double].self]?["latitude"] = 36.0
+japan["coordinates"]
+
+// Generic subscripts make this possible, but the end result is still very ugly. Swift is generally not very well suited for working on heterogenous collections like dictionary
+
+// End of example (2)
+
+/*:
+## Keypaths
  */
