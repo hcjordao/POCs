@@ -207,6 +207,15 @@ func sortDescriptor<Root, Value>(
     return { areInIncreasingOrder(key($0), key($1)) }
 }
 
+func sortDescriptor2<Value>(
+    key: @escaping (Pokemon) -> Value,
+    by areInIncreasingOrder: @escaping (Value, Value) -> Bool
+) -> OwnSortDescriptor<Pokemon> {
+    return { areInIncreasingOrder(key($0), key($1)) }
+}
+
+let sortDescriptorTest = sortDescriptor2(key: \.age, by: >)
+
 /*:
 > How does it work to use SortDescriptors on new Swift Versions.
 > - Easier than what is presented before on the book, no need to create a custom function
@@ -217,6 +226,20 @@ func sortDescriptor<Root, Value>(
 let typeDescriptorSwift = SortDescriptor(\Pokemon.type, order: .forward)
 let nameDescriptorSwift = SortDescriptor(\Pokemon.name, order: .forward)
 let ageDescriptorSwift = SortDescriptor(\Pokemon.age, order: .forward)
+
+struct TestStruct {
+    let value: Int
+    let value2: Int = Int.random(in: 0...10)
+    let boolean: Bool = Bool.random()
+}
+
+var array: [TestStruct] = [.init(value: 2), .init(value: 3), .init(value: 2), .init(value: 5)]
+
+let testStructValueDescriptor = SortDescriptor(\TestStruct.value, order: .reverse)
+let testStructValue2Descriptor = SortDescriptor(\TestStruct.value2, order: .forward)
+let testStructBoolDescriptor = SortDescriptor(\TestStruct.boolean.hashValue, order: .reverse)
+
+array.sorted(using: [testStructValueDescriptor, testStructValue2Descriptor, testStructBoolDescriptor])
 
 pokemons.sorted(using: [typeDescriptorSwift, nameDescriptorSwift, ageDescriptorSwift])
 
