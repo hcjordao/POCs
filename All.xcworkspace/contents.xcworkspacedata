@@ -7,6 +7,9 @@
       <FileRef
          location = "group:Playgrounds/AdvancedSwift.playground">
       </FileRef>
+      <FileRef
+         location = "group:Pointfree.playground">
+      </FileRef>
    </Group>
    <Group
       location = "container:"
