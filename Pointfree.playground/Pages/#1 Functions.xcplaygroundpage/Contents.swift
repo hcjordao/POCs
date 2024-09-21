@@ -105,5 +105,69 @@ extension Int {
 [1, 2, 3]
     .map(incr >>> square)
 
+/*:
+### Custom Operator
+ - Prefix: Added before the operand such as -x
+ - Infix: Added between two operands such as x+y
+ - Postfix: Added after the operand such as x+
+ */
+
+prefix operator ***
+
+prefix func ***(number: Int) -> Int {
+    number *  number
+}
+
+prefix func ***(number: Double) -> Double {
+    number *  number
+}
+
+let x = 2
+let y: Double = 3.0
+
+***x
+***y
+
+/*:
+### Precedence Groups: higherThan, lowerThan, associativity and assignment
+ 1. higherThan: This key indicates that the new group has higher precedence than the specified groups.
+ 2. lowerThan: This key indicates that the new group has lower precedence than the specified groups.
+ 3.associativity: This key defines how operators with the same precedence level are grouped together: left, right, or none. If no associativity is specified, an expression with adjacent uses of operators in the group is considered ambiguous and is a compile-time error.
+ 4. assignment: This key indicates how the operator interacts with variable assignments. If true, the operator is assumed to involve an assignment, and any surrounding expression that also involves an assignment will use the assignment's precedence level rather than the operator's own precedence level.
+ */
+
+precedencegroup AssignmentTrue {
+    assignment: true // From my understanding this allows for optional unwrapping to work correctly
+}
+
+precedencegroup AssignmentFalse {
+    assignment: false
+}
+
+infix operator ++=: AssignmentTrue
+infix operator ++: AssignmentFalse
+
+extension Int {
+    static func ++= (left: inout Int, right: Int) {
+        left += right
+    }
+
+    static func ++ (left: Int, right: Int) -> Int {
+        return left + right
+    }
+}
+
+struct AssignmentTesting { var number = 0 }
+
+var assignmentTesting: AssignmentTesting? = AssignmentTesting()
+var test2 = 5
+test2 ++= 3
+test2
+
+// assignmentTesting?.number ++= 3 // assigns 0 + 3 to assignmentTesting.number
+assignmentTesting?.number
+assignmentTesting!.number ++ 5 // returns 3 + 5
+assignmentTesting?.number // == 3
+
 //: [Previous](@previous)
 //: [Next](@next)
