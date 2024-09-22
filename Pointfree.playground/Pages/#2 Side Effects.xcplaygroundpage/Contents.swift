@@ -6,6 +6,8 @@ import Foundation
  # 1. Side Effects
 
  ### Major take aways:
+ - It is important to be able to handle side effects inside functions. Not handling them might lead to bugs or tests not being effective
+ - Mutations due to reference types might lead to headaches so we can work with value types and inouts to reduce this
 
  ### Introduction:
  - On the last episode, we understood the use functions and the usage of inputs and outputs and how functions composed
@@ -207,6 +209,211 @@ func greet(at date: Date = Date()) -> (String) -> String {
 "Blob" |> uppercased >>> greet(at: Date())
 greet(at: Date()) // Got back the String -> String signature for compose
 greet(at: Date())("Blob")
+
+/*:
+ ### Mutations
+ */
+
+let formatter = NumberFormatter()
+
+func decimalStyle(_ format: NumberFormatter) {
+    format.numberStyle = .decimal
+    format.maximumFractionDigits = 2
+}
+
+func currencyStyle(_ format: NumberFormatter) {
+    format.numberStyle = .currency
+    format.roundingMode = .down
+}
+
+func wholeStyle(_ format: NumberFormatter) {
+    format.maximumFractionDigits = 0
+}
+
+decimalStyle(formatter)
+wholeStyle(formatter)
+formatter.string(for: 1234.6)
+
+// We performed a mutation here on our reference type
+currencyStyle(formatter)
+formatter.string(for: 1234.6)
+
+// Leading to bug here which rounds down the number given the .roundingMode was set to down on currencyStyle
+decimalStyle(formatter)
+wholeStyle(formatter)
+formatter.string(for: 1234.6)
+
+// Refactor this code so we can work with value types which create copy only for "you", and mutations don't apply to it
+
+struct NumberFormatterConfig {
+    var numberStyle: NumberFormatter.Style = .none
+    var roundingMode: NumberFormatter.RoundingMode = .up
+    var maximumFractionDigits: Int = 0
+
+    var formatter: NumberFormatter {
+        let result = NumberFormatter()
+        result.numberStyle = numberStyle
+        result.roundingMode = roundingMode
+        result.maximumFractionDigits = maximumFractionDigits
+        return result
+    }
+}
+
+func decimalStyle(_ format: NumberFormatterConfig) -> NumberFormatterConfig {
+    var format = format
+    format.numberStyle = .decimal
+    format.maximumFractionDigits = 2
+    return format
+}
+
+func currencyStyle(_ format: NumberFormatterConfig) -> NumberFormatterConfig {
+    var format = format
+    format.numberStyle = .currency
+    format.roundingMode = .down
+    return format
+}
+
+decimalStyle >>> currencyStyle
+
+func wholeStyle(_ format: NumberFormatterConfig) -> NumberFormatterConfig {
+    var format = format
+    format.maximumFractionDigits = 0
+    return format
+}
+
+// Now we are creating a copy of the config and not creating it for everyone
+wholeStyle(decimalStyle(NumberFormatterConfig()))
+    .formatter
+    .string(for: "1234.6")
+
+wholeStyle(currencyStyle(NumberFormatterConfig()))
+    .formatter
+    .string(for: "1234.6")
+
+wholeStyle(decimalStyle(NumberFormatterConfig()))
+    .formatter
+    .string(for: "1234.6")
+
+// Usage of inout to mutate value types
+func inoutDecimalStyle(_ format: inout NumberFormatterConfig) {
+    format.numberStyle = .decimal
+    format.maximumFractionDigits = 2
+}
+
+func inoutCurrencyStyleInout(_ format: inout NumberFormatterConfig) {
+    format.numberStyle = .currency
+    format.roundingMode = .down
+}
+
+func inoutWholeStyleInout(_ format: inout NumberFormatterConfig)  {
+    format.maximumFractionDigits = 0
+}
+
+var config = NumberFormatterConfig()
+inoutDecimalStyle(&config)
+inoutWholeStyleInout(&config)
+config.formatter.string(for: 1234.6)
+
+inoutCurrencyStyleInout(&config)
+config.formatter.string(for: 1234.6)
+
+inoutDecimalStyle(&config)
+inoutWholeStyleInout(&config)
+config.formatter.string(for: 1234.6)
+
+// Going between the worlds of inout and values through composition
+func toInout<A>(_ f: @escaping (A) -> A) -> (inout A) -> Void {
+    return { a in
+        a = f(a)
+    }
+}
+
+func fromInout<A>(_ f: @escaping (inout A) -> Void) -> (A) -> A {
+    return { a in
+        var a = a
+        f(&a)
+        return a
+    }
+}
+
+precedencegroup SingleTypeComposition {
+    associativity: left
+    higherThan: ForwardApplication
+}
+
+// Diamond Operator
+infix operator <>: SingleTypeComposition
+
+func <> <A>(f: @escaping (A) -> A, g: @escaping (A) -> A) -> (A) -> A {
+    return f >>> g
+}
+
+func <> <A>(
+    f: @escaping (inout A) -> Void,
+    g: @escaping (inout A) -> Void
+) -> (inout A) -> Void {
+    return { a in
+        f(&a)
+        g(&a)
+    }
+}
+
+func |> <A>(a: inout A, f: (inout A) -> Void) -> Void {
+    f(&a)
+}
+
+
+let formattingConfig = config |> decimalStyle <> wholeStyle
+formattingConfig.formatter.string(for: 1234.6)
+
+var testConfig = NumberFormatterConfig()
+testConfig |> inoutDecimalStyle <> inoutCurrencyStyleInout
+
+testConfig.formatter.string(for: 1234.6)
+
+/*:
+Little Test.
+ PS: We are still working with the reference type
+ */
+
+let testFormatter = NumberFormatter()
+
+extension NumberFormatter {
+    func decimalStyle() -> NumberFormatter {
+        numberStyle = .decimal
+        maximumFractionDigits = 2
+        return self
+    }
+
+    func currencyStyle() -> NumberFormatter {
+        numberStyle = .currency
+        roundingMode = .down
+        return self
+    }
+
+    func wholeStyle() -> NumberFormatter {
+        maximumFractionDigits = 0
+        return self
+    }
+}
+
+let testNumberFormatter = NumberFormatter()
+
+testFormatter
+    .decimalStyle()
+    .wholeStyle()
+    .string(for: 1234.6)
+
+// We performed a mutation here on our reference type
+testFormatter
+    .currencyStyle()
+    .string(for: 1234.6)
+
+// Leading to bug here which rounds down the number given the .roundingMode was set to down on currencyStyle
+testFormatter
+    .decimalStyle()
+    .wholeStyle()
+    .string(for: 1234.6)
 
 //: [Next](@next)
 //: [Previous](@previous)

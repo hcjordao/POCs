@@ -214,11 +214,10 @@ print("Evaluate: \(compilerMessageTwo)")
 // Helper Operator
 infix operator ???: NilCoalescingPrecedence
 
-func ???<T>(optional: T?, defaultValue: @autoclosure () -> String) -> String {
+func ???<T>(optional: Optional<T>, defaultValue: @autoclosure () -> String) -> String {
     switch optional {
     case let .some(value):
         return String(describing: value)
-
     case .none:
         return defaultValue()
     }
@@ -380,8 +379,8 @@ func !!<T>(wrapped: T?, failureText: @autoclosure () -> String) -> T {
     fatalError(failureText())
 }
 
-let s = "foo"
-// let p = Int(s) !! "Expecting integer, got \"\(s)\""
+let s = Optional(3)
+// let p = s !! "Expecting integer, got \"\(s)\""
 
 /*:
 ### Asserting in Debug Builds

@@ -109,7 +109,7 @@ extension Array where Element: Equatable {
         var result: [[Element]] = isEmpty ? [] : [[self[0]]]
 
         for (previous, current) in zip(self, dropFirst()) {
-            if previous == current {
+            if condition(previous, current) {
                 result[result.endIndex - 1].append(current)
             } else {
                 result.append([current])
@@ -121,7 +121,8 @@ extension Array where Element: Equatable {
 }
 
 // This code above is extracted to a file of extensions, so now our code looks like this. Which uses 1 line of code.
-let splitArray = groupedArray.split(where: !=)
+let splitArray = groupedArray.split(where: ==)
+let splitDifferentArray = groupedArray.split(where: !=)
 
 /*:
 ### Array Slices
