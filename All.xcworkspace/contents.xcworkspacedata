@@ -15,6 +15,9 @@
       location = "container:"
       name = "Singular Projects">
       <FileRef
+         location = "group:Projects/PointFree/PointFree.xcodeproj">
+      </FileRef>
+      <FileRef
          location = "group:Projects/Concurrency/Concurrency.xcodeproj">
       </FileRef>
    </Group>
